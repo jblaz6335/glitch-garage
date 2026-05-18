@@ -7,6 +7,7 @@ const router = express.Router();
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 const FREE_BUILDS_PER_DAY = 1;
+const ADMIN_BUILDS_PER_DAY = 4;
 
 const SYSTEM_PROMPT = `You are Glitch Garage AI, an expert automotive performance and modification consultant with encyclopedic knowledge of car tuning, modification platforms, aftermarket parts, and enthusiast culture. You help car enthusiasts plan and execute builds within their budget.
 
@@ -83,7 +84,8 @@ router.get('/remaining', authenticate, async (req, res) => {
       args: [req.user.id]
     });
     const { count } = rowToObject(result);
-    res.json({ remaining: Math.max(0, FREE_BUILDS_PER_DAY - count), limit: FREE_BUILDS_PER_DAY });
+    const limit = req.user.is_admin ? ADMIN_BUILDS_PER_DAY : FREE_BUILDS_PER_DAY;
+    res.json({ remaining: Math.max(0, limit - count), limit });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to get remaining builds' });
@@ -143,10 +145,11 @@ router.post('/generate', authenticate, async (req, res) => {
       args: [req.user.id]
     });
     const todayBuilds = rowToObject(countResult).count;
+    const dailyLimit = req.user.is_admin ? ADMIN_BUILDS_PER_DAY : FREE_BUILDS_PER_DAY;
 
-    if (todayBuilds >= FREE_BUILDS_PER_DAY) {
+    if (todayBuilds >= dailyLimit) {
       return res.status(429).json({
-        error: `Daily limit reached. You get ${FREE_BUILDS_PER_DAY} free builds per day. Come back tomorrow!`
+        error: `Daily limit reached. You get ${dailyLimit} free builds per day. Come back tomorrow!`
       });
     }
 
@@ -217,7 +220,7 @@ router.post('/generate', authenticate, async (req, res) => {
         tokensUsed,
         cacheHit: (usage.cache_read_input_tokens || 0) > 0,
         buildsToday: todayBuilds + 1,
-        buildsRemaining: Math.max(0, FREE_BUILDS_PER_DAY - todayBuilds - 1)
+        buildsRemaining: Math.max(0, dailyLimit - todayBuilds - 1)
       }
     });
   } catch (err) {
