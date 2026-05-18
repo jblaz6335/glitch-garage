@@ -1,5 +1,5 @@
 require('dotenv').config({ override: true });
-// Disable strict TLS cert verification — Anthropic API cert chain varies across environments.
+// Disable strict TLS cert verification — Anthropic API cert chain varies across environments (Railway Linux).
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 const express = require('express');
 const cors = require('cors');
