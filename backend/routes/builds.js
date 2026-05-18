@@ -6,7 +6,7 @@ const { authenticate } = require('../middleware/auth');
 const router = express.Router();
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-const FREE_BUILDS_PER_DAY = 3;
+const FREE_BUILDS_PER_DAY = 1;
 
 const SYSTEM_PROMPT = `You are Glitch Garage AI, an expert automotive performance and modification consultant with encyclopedic knowledge of car tuning, modification platforms, aftermarket parts, and enthusiast culture. You help car enthusiasts plan and execute builds within their budget.
 
