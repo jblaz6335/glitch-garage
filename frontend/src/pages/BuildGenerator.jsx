@@ -76,7 +76,7 @@ export default function BuildGenerator() {
     } catch (err) {
       const msg = err.response?.data?.error || 'Build generation failed';
       if (err.response?.status === 429) {
-        setError('Daily limit reached (1 build/day). Come back tomorrow!');
+        setError('Daily limit reached (2 builds/day). Come back tomorrow!');
       } else {
         setError(msg);
       }

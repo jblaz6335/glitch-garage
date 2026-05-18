@@ -45,7 +45,7 @@ export default function Register() {
     <main className="page-auth">
       <div className="auth-card">
         <GlitchText text="SIGN UP" tag="h2" className="auth-title" />
-        <p className="auth-subtitle">1 free build per day — no card needed</p>
+        <p className="auth-subtitle">2 free builds per day — no card needed</p>
 
         {error && <div className="alert alert-error">{error}</div>}
 
