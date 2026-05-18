@@ -9,7 +9,7 @@ const FEATURES = [
   { icon: '🔧', title: 'JUNKYARD FINDER', desc: 'ZIP-code based salvage yard discovery using live map data. Find used parts cheap near you.' },
   { icon: '📋', title: 'PARTS LISTS', desc: 'Every modification includes install difficulty, time estimate, sourcing links for new, used, and junkyard parts.' },
   { icon: '⚡', title: 'INSTANT RESULTS', desc: 'Get a full build plan in seconds. Save and revisit your builds from your personal dashboard.' },
-  { icon: '🔒', title: 'FREE TIER', desc: '3 free builds per day. No credit card required to get started.' },
+  { icon: '🔒', title: 'FREE TIER', desc: '1 free build per day. No credit card required to get started.' },
 ];
 
 export default function Home() {
