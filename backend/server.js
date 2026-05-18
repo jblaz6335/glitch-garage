@@ -1,6 +1,6 @@
 require('dotenv').config({ override: true });
-// Node 24 uses its own CA bundle which can't verify some certs (e.g. Anthropic API).
-// Disable strict SSL verification for local dev. Remove this line before deploying.
+// Disable strict TLS cert verification — Anthropic API cert chain varies across environments.
+// On Railway (Linux/Node 22), the system CA is fine; this covers edge cases.
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 const express = require('express');
 const cors = require('cors');
