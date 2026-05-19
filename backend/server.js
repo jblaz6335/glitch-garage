@@ -11,6 +11,7 @@ const authRoutes = require('./routes/auth');
 const buildsRoutes = require('./routes/builds');
 const adminRoutes = require('./routes/admin');
 const junkyardsRoutes = require('./routes/junkyards');
+const groupsRoutes = require('./routes/groups');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -35,6 +36,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/builds', buildsRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/junkyards', junkyardsRoutes);
+app.use('/api/groups', groupsRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });

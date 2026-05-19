@@ -8,6 +8,9 @@ import Register from './pages/Register';
 import BuildGenerator from './pages/BuildGenerator';
 import Dashboard from './pages/Dashboard';
 import Admin from './pages/Admin';
+import Groups from './pages/Groups';
+import GroupDetail from './pages/GroupDetail';
+import JoinGroup from './pages/JoinGroup';
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -34,6 +37,9 @@ function AppRoutes() {
         <Route path="/build" element={<PrivateRoute><BuildGenerator /></PrivateRoute>} />
         <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
         <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
+        <Route path="/groups" element={<PrivateRoute><Groups /></PrivateRoute>} />
+        <Route path="/groups/join/:code" element={<PrivateRoute><JoinGroup /></PrivateRoute>} />
+        <Route path="/groups/:id" element={<PrivateRoute><GroupDetail /></PrivateRoute>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>

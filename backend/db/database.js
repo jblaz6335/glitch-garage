@@ -79,6 +79,53 @@ async function initDB() {
       created_at TEXT DEFAULT (datetime('now')),
       FOREIGN KEY (user_id) REFERENCES users(id)
     );
+
+    CREATE TABLE IF NOT EXISTS groups (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      description TEXT,
+      invite_code TEXT UNIQUE NOT NULL,
+      created_by INTEGER NOT NULL,
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (created_by) REFERENCES users(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS group_members (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      group_id INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
+      active_build_id INTEGER,
+      active_tier TEXT DEFAULT 'budget',
+      joined_at TEXT DEFAULT (datetime('now')),
+      UNIQUE(group_id, user_id),
+      FOREIGN KEY (group_id) REFERENCES groups(id),
+      FOREIGN KEY (user_id) REFERENCES users(id),
+      FOREIGN KEY (active_build_id) REFERENCES builds(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS build_progress (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      build_id INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
+      tier TEXT NOT NULL,
+      mod_index INTEGER NOT NULL,
+      completed_at TEXT DEFAULT (datetime('now')),
+      UNIQUE(build_id, user_id, tier, mod_index),
+      FOREIGN KEY (build_id) REFERENCES builds(id),
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS group_comments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      group_id INTEGER NOT NULL,
+      build_id INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
+      content TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (group_id) REFERENCES groups(id),
+      FOREIGN KEY (build_id) REFERENCES builds(id),
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
   `);
 
   console.log('Database initialized');
