@@ -126,6 +126,27 @@ async function initDB() {
       FOREIGN KEY (build_id) REFERENCES builds(id),
       FOREIGN KEY (user_id) REFERENCES users(id)
     );
+
+    CREATE TABLE IF NOT EXISTS global_chat_messages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      content TEXT NOT NULL,
+      car_info TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      is_deleted INTEGER DEFAULT 0,
+      is_pinned INTEGER DEFAULT 0,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS chat_reports (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      message_id INTEGER NOT NULL,
+      reporter_id INTEGER NOT NULL,
+      created_at TEXT DEFAULT (datetime('now')),
+      UNIQUE(message_id, reporter_id),
+      FOREIGN KEY (message_id) REFERENCES global_chat_messages(id),
+      FOREIGN KEY (reporter_id) REFERENCES users(id)
+    );
   `);
 
   console.log('Database initialized');

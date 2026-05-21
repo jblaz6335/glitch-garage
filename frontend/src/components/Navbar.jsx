@@ -44,6 +44,9 @@ export default function Navbar() {
             <Link to="/groups" className={`nav-link ${isActive('/groups')}`} onClick={close}>
               CREWS
             </Link>
+            <Link to="/chat" className={`nav-link ${isActive('/chat')}`} onClick={close}>
+              CHAT
+            </Link>
             {user.is_admin && (
               <Link to="/admin" className={`nav-link nav-link-admin ${isActive('/admin')}`} onClick={close}>
                 ADMIN
