@@ -6,7 +6,9 @@ import GlitchText from '../components/GlitchText';
 const FEATURES = [
   { icon: '🤖', title: 'AI-POWERED BUILDS', desc: 'Claude AI analyzes your car and budget to generate three complete build plans tailored to your exact specs.' },
   { icon: '💰', title: '3 BUDGET TIERS', desc: 'Budget, Mid-Range, and Full Send options — every mod sourced with real parts links and cost estimates.' },
-  { icon: '🔧', title: 'JUNKYARD FINDER', desc: 'ZIP-code based salvage yard discovery using live map data. Find used parts cheap near you.' },
+  { icon: '🏁', title: 'CREWS & COMPETITION', desc: 'Create or join a crew with friends. Track build progress on a live leaderboard and comment on each other\'s builds.' },
+  { icon: '🔧', title: 'GARAGE DOC AI', desc: 'Built-in AI diagnostic assistant. Ask about warning lights, OBD codes, weird noises — get plain-English fixes instantly.' },
+  { icon: '🔩', title: 'JUNKYARD FINDER', desc: 'ZIP-code based salvage yard discovery using live map data. Find used parts cheap near you.' },
   { icon: '📋', title: 'PARTS LISTS', desc: 'Every modification includes install difficulty, time estimate, sourcing links for new, used, and junkyard parts.' },
   { icon: '⚡', title: 'INSTANT RESULTS', desc: 'Get a full build plan in seconds. Save and revisit your builds from your personal dashboard.' },
   { icon: '🔒', title: 'FREE TIER', desc: '2 free builds per day. No credit card required to get started.' },

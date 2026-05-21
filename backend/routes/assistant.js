@@ -45,7 +45,7 @@ router.post('/chat', authenticate, async (req, res) => {
     ];
 
     const response = await anthropic.messages.create({
-      model: process.env.CLAUDE_MODEL || 'claude-opus-4-7',
+      model: process.env.ASSISTANT_MODEL || 'claude-haiku-4-5',
       max_tokens: 1024,
       system: [{ type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
       messages
