@@ -1,11 +1,13 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const PLATFORM_TAGS = ['OEM+', 'Track', 'Street', 'Drift', 'Show'];
 
 export default function Home() {
   const { user } = useAuth();
+
+  if (user) return <Navigate to="/dashboard" replace />;
 
   return (
     <main className="page-home garage-landing">
@@ -18,17 +20,8 @@ export default function Home() {
             and keep your garage, crew, chat, and Garage Doc in one polished workspace.
           </p>
           <div className="landing-actions">
-            {user ? (
-              <>
-                <Link to="/dashboard" className="btn btn-primary btn-lg">Open My Garage</Link>
-                <Link to="/build" className="btn btn-outline btn-lg">New Build</Link>
-              </>
-            ) : (
-              <>
-                <Link to="/login" className="btn btn-outline btn-lg">Login</Link>
-                <Link to="/register" className="btn btn-primary btn-lg">Sign Up</Link>
-              </>
-            )}
+            <Link to="/login" className="btn btn-outline btn-lg">Login</Link>
+            <Link to="/register" className="btn btn-primary btn-lg">Sign Up</Link>
           </div>
           <div className="landing-metrics">
             <span>AI build plans</span>

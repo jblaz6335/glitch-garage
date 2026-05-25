@@ -19,7 +19,7 @@ export default function Navbar() {
 
   return (
     <nav className="navbar">
-      <Link to="/" className="navbar-brand" onClick={close}>
+      <Link to={user ? '/dashboard' : '/'} className="navbar-brand" onClick={close}>
         <span className="brand-icon">⚙</span>
         GLITCH<span className="brand-accent">GARAGE</span>
       </Link>

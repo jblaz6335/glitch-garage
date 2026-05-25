@@ -2613,6 +2613,43 @@ body::before {
   border-color: rgba(255,200,0,0.58);
   box-shadow: 0 0 14px rgba(255,200,0,0.12);
 }
+.garage-card-actions {
+  align-items: flex-end;
+  flex-direction: column;
+}
+.garage-status,
+.open-build-btn {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.garage-status {
+  color: rgba(224,230,255,0.58);
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.025);
+  border-radius: 4px;
+  padding: 0.28rem 0.45rem;
+}
+.garage-status.active {
+  color: var(--cyan);
+  border-color: rgba(0,229,255,0.36);
+  background: rgba(0,229,255,0.08);
+}
+.open-build-btn {
+  border: 1px solid rgba(0,229,255,0.28);
+  background: rgba(0,229,255,0.06);
+  color: var(--cyan);
+  border-radius: 4px;
+  padding: 0.42rem 0.58rem;
+  cursor: pointer;
+  transition: border-color 0.16s ease, background 0.16s ease, transform 0.16s ease;
+}
+.open-build-btn:hover {
+  border-color: rgba(0,229,255,0.58);
+  background: rgba(0,229,255,0.12);
+  transform: translateY(-1px);
+}
 .garage-empty {
   border: 1px solid rgba(0,229,255,0.14);
   border-radius: 8px;
@@ -3338,6 +3375,13 @@ body::before {
   .build-history-meta {
     width: 100%;
     justify-content: space-between;
+  }
+  .garage-card-actions {
+    align-items: stretch;
+    flex-direction: row;
+  }
+  .garage-card-actions .token-badge {
+    display: none;
   }
 
   .garage-builder-shell {

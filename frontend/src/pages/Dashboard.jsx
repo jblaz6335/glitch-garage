@@ -87,7 +87,7 @@ export default function Dashboard() {
       <div className="container">
         <div className="garage-hero">
           <div>
-            <span className="garage-kicker">SIGNED IN AS {user?.username}</span>
+            <span className="garage-kicker">Welcome back, {user?.username}</span>
             <GlitchText text="MY GARAGE" tag="h2" className="page-title" />
             <p className="page-subtitle">Saved builds, favorite specs, and digital identity cards.</p>
           </div>
@@ -113,7 +113,7 @@ export default function Dashboard() {
           <>
             <div className="garage-section-label">
               <span>Recent Builds</span>
-              <small>Tap a card to open the full build</small>
+              <small>Open a build to tune the garage card and view AI build plans</small>
             </div>
             <div className="garage-grid">
               {builds.map(b => {
@@ -145,7 +145,10 @@ export default function Dashboard() {
                         <span className="build-history-budget">${Number(b.budget).toLocaleString()} budget</span>
                         <span className="build-history-date">{new Date(b.created_at).toLocaleDateString()}</span>
                       </div>
-                      <div className="build-history-meta">
+                      <div className="build-history-meta garage-card-actions">
+                        <span className={`garage-status ${isExpanded ? 'active' : ''}`}>
+                          {isExpanded ? 'Open' : 'Saved'}
+                        </span>
                         <button
                           type="button"
                           className={`favorite-btn ${favorites.includes(b.id) ? 'active' : ''}`}
@@ -155,10 +158,19 @@ export default function Dashboard() {
                           }}
                           aria-label="Favorite build"
                         >
-                          Fav
+                          {favorites.includes(b.id) ? 'Favorited' : 'Favorite'}
                         </button>
                         {b.tokens_used && <span className="token-badge">{b.tokens_used.toLocaleString()} tokens</span>}
-                        <span className={`expand-icon ${isExpanded ? 'expanded' : ''}`}>Open</span>
+                        <button
+                          type="button"
+                          className="open-build-btn"
+                          onClick={e => {
+                            e.stopPropagation();
+                            toggleExpand(b.id, b);
+                          }}
+                        >
+                          {isExpanded ? 'Close Build' : 'Open Build'}
+                        </button>
                       </div>
                     </div>
 
