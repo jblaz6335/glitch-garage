@@ -149,6 +149,12 @@ async function initDB() {
     );
   `);
 
+  const buildColumns = rowsToObjects(await db.execute('PRAGMA table_info(builds)'))
+    .map(col => col.name);
+  if (!buildColumns.includes('visual_config')) {
+    await db.execute('ALTER TABLE builds ADD COLUMN visual_config TEXT');
+  }
+
   console.log('Database initialized');
 }
 

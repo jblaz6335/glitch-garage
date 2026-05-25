@@ -7,6 +7,34 @@ const router = express.Router();
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 const FREE_BUILDS_PER_DAY = 2;
+const RIDE_HEIGHTS = ['stock', 'lowered', 'aggressive', 'slammed', 'drag', 'track'];
+const BUILD_STYLES = ['oem-plus', 'street', 'track', 'drift', 'show', 'drag', 'vip', 'stance', 'time-attack'];
+const PAINT_FINISHES = ['gloss', 'satin', 'metallic', 'matte', 'pearl'];
+const AERO_LAYERS = ['ducktail', 'gt-wing', 'lip-kit', 'splitter', 'diffuser', 'hood-vents', 'canards', 'roof-spoiler', 'widebody'];
+
+function cleanText(value, max = 80) {
+  return String(value || '').trim().slice(0, max);
+}
+
+function normalizeVisualConfig(input = {}) {
+  const rideHeight = RIDE_HEIGHTS.includes(input.ride_height) ? input.ride_height : 'stock';
+  const buildStyle = BUILD_STYLES.includes(input.build_style) ? input.build_style : 'street';
+  const paintFinish = PAINT_FINISHES.includes(input.paint_finish) ? input.paint_finish : 'gloss';
+  const aeroLayers = Array.isArray(input.aero_layers)
+    ? input.aero_layers.filter(layer => AERO_LAYERS.includes(layer)).slice(0, 6)
+    : [];
+  return {
+    trim: cleanText(input.trim),
+    body_style: cleanText(input.body_style || 'auto'),
+    paint_color: /^#[0-9a-f]{6}$/i.test(input.paint_color || '') ? input.paint_color : '#00e5ff',
+    paint_finish: paintFinish,
+    wheel_style: cleanText(input.wheel_style || 'auto'),
+    wheel_color: /^#[0-9a-f]{6}$/i.test(input.wheel_color || '') ? input.wheel_color : '#111827',
+    ride_height: rideHeight,
+    build_style: buildStyle,
+    aero_layers: aeroLayers
+  };
+}
 
 const SYSTEM_PROMPT = `You are Glitch Garage AI, an expert automotive performance and modification consultant with encyclopedic knowledge of car tuning, modification platforms, aftermarket parts, and enthusiast culture. You help car enthusiasts plan and execute builds within their budget.
 
@@ -94,7 +122,7 @@ router.get('/history', authenticate, async (req, res) => {
   try {
     const db = getDB();
     const result = await db.execute({
-      sql: 'SELECT id, year, make, model, budget, zip_code, tokens_used, result, created_at FROM builds WHERE user_id = ? ORDER BY created_at DESC LIMIT 20',
+      sql: 'SELECT id, year, make, model, budget, zip_code, visual_config, tokens_used, result, created_at FROM builds WHERE user_id = ? ORDER BY created_at DESC LIMIT 20',
       args: [req.user.id]
     });
     res.json({ builds: rowsToObjects(result) });
@@ -124,8 +152,37 @@ router.get('/:id', authenticate, async (req, res) => {
   }
 });
 
+router.patch('/:id/visual', authenticate, async (req, res) => {
+  try {
+    const visualConfig = normalizeVisualConfig(req.body.visual_config || req.body);
+    const db = getDB();
+    const result = await db.execute({
+      sql: 'UPDATE builds SET visual_config = ? WHERE id = ? AND user_id = ?',
+      args: [JSON.stringify(visualConfig), req.params.id, req.user.id]
+    });
+    if (Number(result.rowsAffected || 0) === 0) {
+      return res.status(404).json({ error: 'Build not found' });
+    }
+    res.json({ visual_config: visualConfig });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to update visual settings' });
+  }
+});
+
 router.post('/generate', authenticate, async (req, res) => {
   const { year, make, model, budget, zip_code, goals, notes } = req.body;
+  const visualConfig = normalizeVisualConfig(req.body.visual_config || {
+    trim: req.body.trim,
+    body_style: req.body.body_style,
+    paint_color: req.body.paint_color,
+    paint_finish: req.body.paint_finish,
+    wheel_style: req.body.wheel_style,
+    wheel_color: req.body.wheel_color,
+    ride_height: req.body.ride_height,
+    build_style: req.body.build_style,
+    aero_layers: req.body.aero_layers
+  });
 
   if (!year || !make || !model || !budget) {
     return res.status(400).json({ error: 'Year, make, model, and budget are required' });
@@ -195,8 +252,8 @@ router.post('/generate', authenticate, async (req, res) => {
     const tokensUsed = (usage.input_tokens || 0) + (usage.output_tokens || 0);
 
     const buildResult = await db.execute({
-      sql: 'INSERT INTO builds (user_id, year, make, model, budget, zip_code, result, tokens_used) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      args: [req.user.id, String(year), make, model, budgetNum, zip_code || null, JSON.stringify(buildData), tokensUsed]
+      sql: 'INSERT INTO builds (user_id, year, make, model, budget, zip_code, visual_config, result, tokens_used) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      args: [req.user.id, String(year), make, model, budgetNum, zip_code || null, JSON.stringify(visualConfig), JSON.stringify(buildData), tokensUsed]
     });
 
     await db.execute({
@@ -213,6 +270,7 @@ router.post('/generate', authenticate, async (req, res) => {
     res.json({
       buildId: Number(buildResult.lastInsertRowid),
       build: buildData,
+      visual_config: visualConfig,
       meta: {
         tokensUsed,
         cacheHit: (usage.cache_read_input_tokens || 0) > 0,

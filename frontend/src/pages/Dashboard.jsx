@@ -4,6 +4,17 @@ import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import GlitchText from '../components/GlitchText';
 import BuildCard from '../components/BuildCard';
+import BuildVisualizer, { DEFAULT_VISUAL_CONFIG } from '../components/BuildVisualizer';
+
+function parseVisualConfig(value) {
+  if (!value) return DEFAULT_VISUAL_CONFIG;
+  if (typeof value === 'object') return { ...DEFAULT_VISUAL_CONFIG, ...value };
+  try {
+    return { ...DEFAULT_VISUAL_CONFIG, ...JSON.parse(value) };
+  } catch {
+    return DEFAULT_VISUAL_CONFIG;
+  }
+}
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -12,6 +23,8 @@ export default function Dashboard() {
   const [error, setError] = useState('');
   const [expanded, setExpanded] = useState(null);
   const [activeTier, setActiveTier] = useState({});
+  const [visualDrafts, setVisualDrafts] = useState({});
+  const [savingVisual, setSavingVisual] = useState(null);
 
   useEffect(() => {
     axios.get('/api/builds/history')
@@ -20,12 +33,32 @@ export default function Dashboard() {
       .finally(() => setLoading(false));
   }, []);
 
-  const toggleExpand = (id) => {
+  const toggleExpand = (id, build) => {
     setExpanded(e => e === id ? null : id);
     setActiveTier(t => ({ ...t, [id]: t[id] || 'budget' }));
+    if (build) {
+      setVisualDrafts(d => ({ ...d, [id]: d[id] || parseVisualConfig(build.visual_config) }));
+    }
   };
 
   const setTier = (id, tier) => setActiveTier(t => ({ ...t, [id]: tier }));
+  const setVisualDraft = (id, config) => setVisualDrafts(d => ({ ...d, [id]: config }));
+
+  const saveVisual = async (id) => {
+    setSavingVisual(id);
+    try {
+      const res = await axios.patch(`/api/builds/${id}/visual`, {
+        visual_config: visualDrafts[id] || DEFAULT_VISUAL_CONFIG,
+      });
+      const saved = res.data.visual_config;
+      setBuilds(bs => bs.map(b => b.id === id ? { ...b, visual_config: JSON.stringify(saved) } : b));
+      setVisualDrafts(d => ({ ...d, [id]: saved }));
+    } catch {
+      setError('Failed to save visual settings');
+    } finally {
+      setSavingVisual(null);
+    }
+  };
 
   if (loading) return (
     <main className="page-dashboard">
@@ -76,10 +109,10 @@ export default function Dashboard() {
                 <div key={b.id} className="build-history-item">
                   <div
                     className="build-history-header"
-                    onClick={() => toggleExpand(b.id)}
+                    onClick={() => toggleExpand(b.id, b)}
                     role="button"
                     tabIndex={0}
-                    onKeyDown={e => e.key === 'Enter' && toggleExpand(b.id)}
+                    onKeyDown={e => e.key === 'Enter' && toggleExpand(b.id, b)}
                   >
                     <div className="build-history-info">
                       <span className="build-history-car">
@@ -102,6 +135,22 @@ export default function Dashboard() {
 
                   {isExpanded && result && (
                     <div className="build-history-expanded">
+                      <div className="dashboard-visual-tools">
+                        <BuildVisualizer
+                          vehicle={{ year: b.year, make: b.make, model: b.model, budget: b.budget }}
+                          value={visualDrafts[b.id] || parseVisualConfig(b.visual_config)}
+                          onChange={config => setVisualDraft(b.id, config)}
+                          title="Garage Identity Card"
+                        />
+                        <button
+                          className="btn btn-outline btn-full"
+                          onClick={() => saveVisual(b.id)}
+                          disabled={savingVisual === b.id}
+                        >
+                          {savingVisual === b.id ? 'SAVING...' : 'SAVE DIGITAL BUILD'}
+                        </button>
+                      </div>
+
                       <div className="tier-tabs">
                         {tiers.map(t => (
                           <button

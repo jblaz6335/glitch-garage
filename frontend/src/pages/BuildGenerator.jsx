@@ -4,6 +4,7 @@ import GlitchText from '../components/GlitchText';
 import BuildCard from '../components/BuildCard';
 import JunkyardFinder from '../components/JunkyardFinder';
 import LoadingGlitch from '../components/LoadingGlitch';
+import BuildVisualizer, { DEFAULT_VISUAL_CONFIG } from '../components/BuildVisualizer';
 
 const CURRENT_YEAR = new Date().getFullYear();
 const YEARS = Array.from({ length: 40 }, (_, i) => CURRENT_YEAR - i);
@@ -28,6 +29,7 @@ export default function BuildGenerator() {
     zip_code: '',
     goals: '',
     notes: '',
+    visual_config: DEFAULT_VISUAL_CONFIG,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -43,6 +45,7 @@ export default function BuildGenerator() {
   }, []);
 
   const handleChange = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
+  const handleVisualChange = visual_config => setForm(f => ({ ...f, visual_config }));
 
   const handleSubmit = async e => {
     e.preventDefault();
@@ -68,6 +71,7 @@ export default function BuildGenerator() {
         zip_code: form.zip_code.trim(),
         goals: form.goals,
         notes: form.notes.trim(),
+        visual_config: form.visual_config,
       });
       setResult(res.data);
       setActiveTier('budget');
@@ -107,6 +111,12 @@ export default function BuildGenerator() {
       { key: 'fullsend', label: 'FULL SEND', data: build.fullsend },
     ];
     const activeData = tiers.find(t => t.key === activeTier)?.data;
+    const vehicle = {
+      year: build.vehicle?.year || form.year,
+      make: build.vehicle?.make || form.make,
+      model: build.vehicle?.model || form.model,
+      budget: form.budget,
+    };
 
     return (
       <main className="page-build">
@@ -126,6 +136,13 @@ export default function BuildGenerator() {
           {result.meta?.cacheHit && (
             <div className="cache-badge">⚡ CACHED RESPONSE — faster & cheaper</div>
           )}
+
+          <BuildVisualizer
+            vehicle={vehicle}
+            value={result.visual_config || form.visual_config}
+            editable={false}
+            title="Saved Digital Build"
+          />
 
           <div className="tier-tabs">
             {tiers.map(t => (
@@ -275,6 +292,21 @@ export default function BuildGenerator() {
                 maxLength={500}
               />
             </div>
+          </div>
+
+          <div className="form-section">
+            <h3 className="form-section-title">DIGITAL GARAGE</h3>
+            <BuildVisualizer
+              vehicle={{
+                year: form.year || 'Year',
+                make: form.make || 'Make',
+                model: form.model || 'Model',
+                budget: form.budget,
+              }}
+              value={form.visual_config}
+              onChange={handleVisualChange}
+              title="Build Preview"
+            />
           </div>
 
           <button
