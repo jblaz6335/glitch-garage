@@ -36,10 +36,10 @@ export default function Navbar() {
         {user ? (
           <>
             <Link to="/build" className={`nav-link ${isActive('/build')}`} onClick={close}>
-              BUILD
+              NEW BUILD
             </Link>
             <Link to="/dashboard" className={`nav-link ${isActive('/dashboard')}`} onClick={close}>
-              HISTORY
+              MY GARAGE
             </Link>
             <Link to="/groups" className={`nav-link ${isActive('/groups')}`} onClick={close}>
               CREWS

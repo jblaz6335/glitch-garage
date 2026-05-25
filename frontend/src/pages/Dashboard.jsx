@@ -4,7 +4,7 @@ import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import GlitchText from '../components/GlitchText';
 import BuildCard from '../components/BuildCard';
-import BuildVisualizer, { DEFAULT_VISUAL_CONFIG } from '../components/BuildVisualizer';
+import BuildVisualizer, { CarPreview, DEFAULT_VISUAL_CONFIG } from '../components/BuildVisualizer';
 
 function parseVisualConfig(value) {
   if (!value) return DEFAULT_VISUAL_CONFIG;
@@ -25,6 +25,13 @@ export default function Dashboard() {
   const [activeTier, setActiveTier] = useState({});
   const [visualDrafts, setVisualDrafts] = useState({});
   const [savingVisual, setSavingVisual] = useState(null);
+  const [favorites, setFavorites] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('gg_favorite_builds') || '[]');
+    } catch {
+      return [];
+    }
+  });
 
   useEffect(() => {
     axios.get('/api/builds/history')
@@ -43,6 +50,13 @@ export default function Dashboard() {
 
   const setTier = (id, tier) => setActiveTier(t => ({ ...t, [id]: tier }));
   const setVisualDraft = (id, config) => setVisualDrafts(d => ({ ...d, [id]: config }));
+  const toggleFavorite = (id) => {
+    setFavorites(current => {
+      const next = current.includes(id) ? current.filter(item => item !== id) : [...current, id];
+      localStorage.setItem('gg_favorite_builds', JSON.stringify(next));
+      return next;
+    });
+  };
 
   const saveVisual = async (id) => {
     setSavingVisual(id);
@@ -63,115 +77,129 @@ export default function Dashboard() {
   if (loading) return (
     <main className="page-dashboard">
       <div className="container">
-        <div className="loading-text">LOADING BUILD HISTORY...</div>
+        <div className="loading-text">LOADING MY GARAGE...</div>
       </div>
     </main>
   );
 
   return (
-    <main className="page-dashboard">
+    <main className="page-dashboard my-garage-page">
       <div className="container">
-        <div className="dashboard-header">
-          <GlitchText text="MY BUILDS" tag="h2" className="page-title" />
-          <Link to="/build" className="btn btn-primary">
-            ⚡ NEW BUILD
-          </Link>
+        <div className="garage-hero">
+          <div>
+            <span className="garage-kicker">SIGNED IN AS {user?.username}</span>
+            <GlitchText text="MY GARAGE" tag="h2" className="page-title" />
+            <p className="page-subtitle">Saved builds, favorite specs, and digital identity cards.</p>
+          </div>
+          <Link to="/build" className="btn btn-primary">New Build</Link>
         </div>
 
-        <div className="dashboard-user">
-          <span>Logged in as <strong>{user?.username}</strong></span>
+        <div className="garage-stats">
+          <div><span>{builds.length}</span><small>Saved Builds</small></div>
+          <div><span>{favorites.length}</span><small>Favorites</small></div>
+          <div><span>{builds[0] ? new Date(builds[0].created_at).toLocaleDateString() : '--'}</span><small>Most Recent</small></div>
         </div>
 
         {error && <div className="alert alert-error">{error}</div>}
 
         {builds.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-icon">🔧</div>
+          <div className="empty-state garage-empty">
+            <div className="empty-icon">GG</div>
             <h3>NO BUILDS YET</h3>
-            <p>Generate your first build plan to get started.</p>
-            <Link to="/build" className="btn btn-primary">
-              ⚡ GENERATE BUILD
-            </Link>
+            <p>Create your first garage card and AI build plan.</p>
+            <Link to="/build" className="btn btn-primary">New Build</Link>
           </div>
         ) : (
-          <div className="builds-list">
-            {builds.map(b => {
-              const result = typeof b.result === 'string' ? JSON.parse(b.result) : b.result;
-              const isExpanded = expanded === b.id;
-              const tier = activeTier[b.id] || 'budget';
-              const tiers = [
-                { key: 'budget', label: 'BUDGET', data: result?.budget },
-                { key: 'midrange', label: 'MID-RANGE', data: result?.midrange },
-                { key: 'fullsend', label: 'FULL SEND', data: result?.fullsend },
-              ];
+          <>
+            <div className="garage-section-label">
+              <span>Recent Builds</span>
+              <small>Tap a card to open the full build</small>
+            </div>
+            <div className="garage-grid">
+              {builds.map(b => {
+                const result = typeof b.result === 'string' ? JSON.parse(b.result) : b.result;
+                const isExpanded = expanded === b.id;
+                const tier = activeTier[b.id] || 'budget';
+                const visualConfig = visualDrafts[b.id] || parseVisualConfig(b.visual_config);
+                const vehicle = { year: b.year, make: b.make, model: b.model, budget: b.budget };
+                const tiers = [
+                  { key: 'budget', label: 'BUDGET', data: result?.budget },
+                  { key: 'midrange', label: 'MID-RANGE', data: result?.midrange },
+                  { key: 'fullsend', label: 'FULL SEND', data: result?.fullsend },
+                ];
 
-              return (
-                <div key={b.id} className="build-history-item">
-                  <div
-                    className="build-history-header"
-                    onClick={() => toggleExpand(b.id, b)}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={e => e.key === 'Enter' && toggleExpand(b.id, b)}
-                  >
-                    <div className="build-history-info">
-                      <span className="build-history-car">
-                        {b.year} {b.make} {b.model}
-                      </span>
-                      <span className="build-history-budget">
-                        ${Number(b.budget).toLocaleString()} budget
-                      </span>
-                      <span className="build-history-date">
-                        {new Date(b.created_at).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <div className="build-history-meta">
-                      {b.tokens_used && (
-                        <span className="token-badge">{b.tokens_used.toLocaleString()} tokens</span>
-                      )}
-                      <span className={`expand-icon ${isExpanded ? 'expanded' : ''}`}>▼</span>
-                    </div>
-                  </div>
-
-                  {isExpanded && result && (
-                    <div className="build-history-expanded">
-                      <div className="dashboard-visual-tools">
-                        <BuildVisualizer
-                          vehicle={{ year: b.year, make: b.make, model: b.model, budget: b.budget }}
-                          value={visualDrafts[b.id] || parseVisualConfig(b.visual_config)}
-                          onChange={config => setVisualDraft(b.id, config)}
-                          title="Garage Identity Card"
-                        />
+                return (
+                  <div key={b.id} className={`build-history-item garage-build-card ${isExpanded ? 'expanded' : ''}`}>
+                    <div
+                      className="build-history-header"
+                      onClick={() => toggleExpand(b.id, b)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={e => e.key === 'Enter' && toggleExpand(b.id, b)}
+                    >
+                      <div className="garage-card-preview">
+                        <CarPreview vehicle={vehicle} config={visualConfig} compact />
+                      </div>
+                      <div className="build-history-info">
+                        <span className="build-history-car">{b.year} {b.make} {b.model}</span>
+                        <span className="build-history-budget">${Number(b.budget).toLocaleString()} budget</span>
+                        <span className="build-history-date">{new Date(b.created_at).toLocaleDateString()}</span>
+                      </div>
+                      <div className="build-history-meta">
                         <button
-                          className="btn btn-outline btn-full"
-                          onClick={() => saveVisual(b.id)}
-                          disabled={savingVisual === b.id}
+                          type="button"
+                          className={`favorite-btn ${favorites.includes(b.id) ? 'active' : ''}`}
+                          onClick={e => {
+                            e.stopPropagation();
+                            toggleFavorite(b.id);
+                          }}
+                          aria-label="Favorite build"
                         >
-                          {savingVisual === b.id ? 'SAVING...' : 'SAVE DIGITAL BUILD'}
+                          Fav
                         </button>
+                        {b.tokens_used && <span className="token-badge">{b.tokens_used.toLocaleString()} tokens</span>}
+                        <span className={`expand-icon ${isExpanded ? 'expanded' : ''}`}>Open</span>
                       </div>
-
-                      <div className="tier-tabs">
-                        {tiers.map(t => (
-                          <button
-                            key={t.key}
-                            className={`tier-tab tier-tab-${t.key} ${tier === t.key ? 'active' : ''}`}
-                            onClick={() => setTier(b.id, t.key)}
-                          >
-                            {t.label}
-                            {t.data?.total_cost && (
-                              <span className="tier-tab-cost">${t.data.total_cost.toLocaleString()}</span>
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                      <BuildCard tier={tier} data={tiers.find(t => t.key === tier)?.data} />
                     </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+
+                    {isExpanded && result && (
+                      <div className="build-history-expanded">
+                        <div className="dashboard-visual-tools">
+                          <BuildVisualizer
+                            vehicle={vehicle}
+                            value={visualConfig}
+                            onChange={config => setVisualDraft(b.id, config)}
+                            title="Garage Identity Card"
+                          />
+                          <button
+                            className="btn btn-outline btn-full"
+                            onClick={() => saveVisual(b.id)}
+                            disabled={savingVisual === b.id}
+                          >
+                            {savingVisual === b.id ? 'SAVING...' : 'SAVE DIGITAL BUILD'}
+                          </button>
+                        </div>
+
+                        <div className="tier-tabs">
+                          {tiers.map(t => (
+                            <button
+                              key={t.key}
+                              className={`tier-tab tier-tab-${t.key} ${tier === t.key ? 'active' : ''}`}
+                              onClick={() => setTier(b.id, t.key)}
+                            >
+                              {t.label}
+                              {t.data?.total_cost && <span className="tier-tab-cost">${t.data.total_cost.toLocaleString()}</span>}
+                            </button>
+                          ))}
+                        </div>
+                        <BuildCard tier={tier} data={tiers.find(t => t.key === tier)?.data} />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </>
         )}
       </div>
     </main>

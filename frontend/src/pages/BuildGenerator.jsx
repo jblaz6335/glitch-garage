@@ -20,6 +20,63 @@ const GOALS = [
   'All-around street build',
 ];
 
+const BUILDER_TABS = [
+  { key: 'setup', label: 'Setup' },
+  { key: 'wheels', label: 'Wheels' },
+  { key: 'suspension', label: 'Suspension' },
+  { key: 'aero', label: 'Aero' },
+  { key: 'paint', label: 'Paint' },
+  { key: 'lighting', label: 'Lighting' },
+  { key: 'interior', label: 'Interior' },
+  { key: 'exhaust', label: 'Exhaust' },
+  { key: 'drivetrain', label: 'Drivetrain' },
+];
+
+const BUILD_MODES = [
+  { value: 'oem-plus', label: 'OEM+' },
+  { value: 'street', label: 'Street' },
+  { value: 'track', label: 'Track' },
+  { value: 'drift', label: 'Drift' },
+  { value: 'vip', label: 'VIP' },
+  { value: 'drag', label: 'Drag' },
+  { value: 'show', label: 'Show Car' },
+  { value: 'time-attack', label: 'Time Attack' },
+];
+
+const RIDE_HEIGHTS = [
+  { value: 'stock', label: 'Stock' },
+  { value: 'lowered', label: 'Lowered' },
+  { value: 'aggressive', label: 'Aggressive' },
+  { value: 'slammed', label: 'Slammed' },
+  { value: 'drag', label: 'Drag' },
+  { value: 'track', label: 'Track' },
+];
+
+const WHEELS = [
+  { value: 'auto', label: 'Auto Match' },
+  { value: 'bbs-lm', label: 'BBS LM' },
+  { value: 'apex-arc8', label: 'Apex ARC-8' },
+  { value: 'te37', label: 'TE37' },
+  { value: 'work-emotion', label: 'Work Emotion' },
+  { value: 'meister', label: 'Meister' },
+  { value: 'drag-pack', label: 'Drag Pack' },
+  { value: 'deep-dish', label: 'Deep Dish' },
+];
+
+const AERO = [
+  { value: 'ducktail', label: 'Ducktail' },
+  { value: 'gt-wing', label: 'GT Wing' },
+  { value: 'lip-kit', label: 'Lip Kit' },
+  { value: 'splitter', label: 'Splitter' },
+  { value: 'diffuser', label: 'Diffuser' },
+  { value: 'hood-vents', label: 'Hood Vents' },
+  { value: 'canards', label: 'Canards' },
+  { value: 'roof-spoiler', label: 'Roof Spoiler' },
+  { value: 'widebody', label: 'Widebody' },
+];
+
+const PAINT_FINISHES = ['gloss', 'satin', 'metallic', 'matte', 'pearl'];
+
 export default function BuildGenerator() {
   const [form, setForm] = useState({
     year: '',
@@ -31,6 +88,7 @@ export default function BuildGenerator() {
     notes: '',
     visual_config: DEFAULT_VISUAL_CONFIG,
   });
+  const [activePanel, setActivePanel] = useState('setup');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [result, setResult] = useState(null);
@@ -45,7 +103,14 @@ export default function BuildGenerator() {
   }, []);
 
   const handleChange = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
-  const handleVisualChange = visual_config => setForm(f => ({ ...f, visual_config }));
+  const updateVisual = patch => setForm(f => ({ ...f, visual_config: { ...f.visual_config, ...patch } }));
+  const toggleAero = layer => {
+    setForm(f => {
+      const current = Array.isArray(f.visual_config.aero_layers) ? f.visual_config.aero_layers : [];
+      const next = current.includes(layer) ? current.filter(item => item !== layer) : [...current, layer];
+      return { ...f, visual_config: { ...f.visual_config, aero_layers: next } };
+    });
+  };
 
   const handleSubmit = async e => {
     e.preventDefault();
@@ -54,10 +119,12 @@ export default function BuildGenerator() {
 
     if (!form.year || !form.make.trim() || !form.model.trim() || !form.budget) {
       setError('Year, make, model, and budget are required');
+      setActivePanel('setup');
       return;
     }
     if (Number(form.budget) < 100) {
       setError('Budget must be at least $100');
+      setActivePanel('setup');
       return;
     }
 
@@ -78,12 +145,7 @@ export default function BuildGenerator() {
       setRemaining(res.data.meta?.buildsRemaining ?? null);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
-      const msg = err.response?.data?.error || 'Build generation failed';
-      if (err.response?.status === 429) {
-        setError('Daily limit reached (2 builds/day). Come back tomorrow!');
-      } else {
-        setError(msg);
-      }
+      setError(err.response?.status === 429 ? 'Daily limit reached (2 builds/day). Come back tomorrow!' : err.response?.data?.error || 'Build generation failed');
     } finally {
       setLoading(false);
     }
@@ -93,6 +155,13 @@ export default function BuildGenerator() {
     setResult(null);
     setError('');
     setShowJunkyard(false);
+  };
+
+  const vehicle = {
+    year: form.year || 'Year',
+    make: form.make || 'Make',
+    model: form.model || 'Model',
+    budget: form.budget,
   };
 
   if (loading) {
@@ -111,7 +180,7 @@ export default function BuildGenerator() {
       { key: 'fullsend', label: 'FULL SEND', data: build.fullsend },
     ];
     const activeData = tiers.find(t => t.key === activeTier)?.data;
-    const vehicle = {
+    const resultVehicle = {
       year: build.vehicle?.year || form.year,
       make: build.vehicle?.make || form.make,
       model: build.vehicle?.model || form.model,
@@ -121,24 +190,20 @@ export default function BuildGenerator() {
     return (
       <main className="page-build">
         <div className="container">
-          <div className="results-header">
+          <div className="results-header garage-results-header">
             <div>
               <GlitchText text="BUILD PLANS" tag="h2" className="results-title" />
               <p className="results-subtitle">
-                {build.vehicle?.year} {build.vehicle?.make} {build.vehicle?.model} — Budget: ${Number(form.budget).toLocaleString()}
+                {build.vehicle?.year} {build.vehicle?.make} {build.vehicle?.model} / ${Number(form.budget).toLocaleString()} budget
               </p>
             </div>
-            <button className="btn btn-outline" onClick={resetForm}>
-              ← NEW BUILD
-            </button>
+            <button className="btn btn-outline" onClick={resetForm}>New Build</button>
           </div>
 
-          {result.meta?.cacheHit && (
-            <div className="cache-badge">⚡ CACHED RESPONSE — faster & cheaper</div>
-          )}
+          {result.meta?.cacheHit && <div className="cache-badge">Cached response</div>}
 
           <BuildVisualizer
-            vehicle={vehicle}
+            vehicle={resultVehicle}
             value={result.visual_config || form.visual_config}
             editable={false}
             title="Saved Digital Build"
@@ -152,9 +217,7 @@ export default function BuildGenerator() {
                 onClick={() => setActiveTier(t.key)}
               >
                 {t.label}
-                {t.data?.total_cost && (
-                  <span className="tier-tab-cost">${t.data.total_cost.toLocaleString()}</span>
-                )}
+                {t.data?.total_cost && <span className="tier-tab-cost">${t.data.total_cost.toLocaleString()}</span>}
               </button>
             ))}
           </div>
@@ -163,17 +226,14 @@ export default function BuildGenerator() {
 
           {build.notes && (
             <div className="build-notes">
-              <h4>⚠ NOTES FROM THE GARAGE</h4>
+              <h4>NOTES FROM THE GARAGE</h4>
               <p>{build.notes}</p>
             </div>
           )}
 
           <div className="junkyard-toggle">
-            <button
-              className="btn btn-outline btn-full"
-              onClick={() => setShowJunkyard(v => !v)}
-            >
-              {showJunkyard ? '▲ HIDE' : '🔧 FIND JUNKYARDS NEAR YOU'}
+            <button className="btn btn-outline btn-full" onClick={() => setShowJunkyard(v => !v)}>
+              {showJunkyard ? 'Hide Junkyards' : 'Find Junkyards Near You'}
             </button>
           </div>
 
@@ -190,132 +250,178 @@ export default function BuildGenerator() {
   }
 
   return (
-    <main className="page-build">
+    <main className="page-build garage-builder-page">
       <div className="container">
-        <div className="build-form-header">
-          <GlitchText text="BUILD PLANNER" tag="h2" className="page-title" />
-          <p className="page-subtitle">Tell Claude your car and budget. Get 3 complete build plans.</p>
+        <div className="build-form-header builder-hero">
+          <div>
+            <span className="garage-kicker">DIGITAL BUILD BAY</span>
+            <GlitchText text="NEW BUILD" tag="h2" className="page-title" />
+            <p className="page-subtitle">Shape the car first, then let the AI build planner generate the parts strategy.</p>
+          </div>
           {remaining !== null && (
             <div className={`remaining-badge ${remaining === 0 ? 'remaining-zero' : ''}`}>
-              {remaining > 0 ? `${remaining} build${remaining !== 1 ? 's' : ''} left today` : 'Daily limit reached — resets at midnight'}
+              {remaining > 0 ? `${remaining} build${remaining !== 1 ? 's' : ''} left today` : 'Daily limit reached'}
             </div>
           )}
         </div>
 
         {error && <div className="alert alert-error">{error}</div>}
 
-        <form className="build-form card" onSubmit={handleSubmit}>
-          <div className="form-section">
-            <h3 className="form-section-title">YOUR VEHICLE</h3>
-            <div className="form-row form-row-3">
-              <div className="form-group">
-                <label className="label">YEAR *</label>
-                <select name="year" className="input" value={form.year} onChange={handleChange} required>
-                  <option value="">Select year</option>
-                  {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
-                </select>
-              </div>
-              <div className="form-group">
-                <label className="label">MAKE *</label>
-                <input
-                  type="text"
-                  name="make"
-                  className="input"
-                  placeholder="e.g. Honda"
-                  value={form.make}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label className="label">MODEL *</label>
-                <input
-                  type="text"
-                  name="model"
-                  className="input"
-                  placeholder="e.g. Civic Si"
-                  value={form.model}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="form-section">
-            <h3 className="form-section-title">BUILD DETAILS</h3>
-            <div className="form-row form-row-2">
-              <div className="form-group">
-                <label className="label">TOTAL BUDGET (USD) *</label>
-                <input
-                  type="number"
-                  name="budget"
-                  className="input"
-                  placeholder="e.g. 5000"
-                  value={form.budget}
-                  onChange={handleChange}
-                  min={100}
-                  max={500000}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label className="label">ZIP CODE <span className="label-optional">(for junkyard finder)</span></label>
-                <input
-                  type="text"
-                  name="zip_code"
-                  className="input"
-                  placeholder="e.g. 90210"
-                  value={form.zip_code}
-                  onChange={handleChange}
-                  maxLength={5}
-                  pattern="[0-9]{5}"
-                />
-              </div>
-            </div>
-            <div className="form-group">
-              <label className="label">BUILD GOAL</label>
-              <select name="goals" className="input" value={form.goals} onChange={handleChange}>
-                <option value="">Select a goal (optional)</option>
-                {GOALS.map(g => <option key={g} value={g}>{g}</option>)}
-              </select>
-            </div>
-            <div className="form-group">
-              <label className="label">ADDITIONAL NOTES <span className="label-optional">(optional)</span></label>
-              <textarea
-                name="notes"
-                className="input textarea"
-                placeholder="e.g. Already have a short throw shifter, want to keep it street legal, daily driver..."
-                value={form.notes}
-                onChange={handleChange}
-                rows={3}
-                maxLength={500}
-              />
-            </div>
-          </div>
-
-          <div className="form-section">
-            <h3 className="form-section-title">DIGITAL GARAGE</h3>
+        <form className="garage-builder-shell" onSubmit={handleSubmit}>
+          <div className="builder-visual-stage">
             <BuildVisualizer
-              vehicle={{
-                year: form.year || 'Year',
-                make: form.make || 'Make',
-                model: form.model || 'Model',
-                budget: form.budget,
-              }}
+              vehicle={vehicle}
               value={form.visual_config}
-              onChange={handleVisualChange}
-              title="Build Preview"
+              editable={false}
+              title="Live Garage Preview"
             />
           </div>
 
-          <button
-            type="submit"
-            className="btn btn-primary btn-full btn-lg"
-            disabled={remaining === 0}
-          >
-            {remaining === 0 ? '⛔ DAILY LIMIT REACHED' : '⚡ GENERATE BUILD PLANS'}
-          </button>
+          <div className="builder-console">
+            <div className="builder-tabs" role="tablist" aria-label="Build categories">
+              {BUILDER_TABS.map(tab => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  className={`builder-tab ${activePanel === tab.key ? 'active' : ''}`}
+                  onClick={() => setActivePanel(tab.key)}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="builder-panel">
+              {activePanel === 'setup' && (
+                <div className="builder-panel-grid">
+                  <div className="form-group">
+                    <label className="label">Year *</label>
+                    <select name="year" className="input" value={form.year} onChange={handleChange} required>
+                      <option value="">Select year</option>
+                      {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="label">Make *</label>
+                    <input type="text" name="make" className="input" placeholder="Honda" value={form.make} onChange={handleChange} required />
+                  </div>
+                  <div className="form-group">
+                    <label className="label">Model *</label>
+                    <input type="text" name="model" className="input" placeholder="Civic Si" value={form.model} onChange={handleChange} required />
+                  </div>
+                  <div className="form-group">
+                    <label className="label">Budget *</label>
+                    <input type="number" name="budget" className="input" placeholder="5000" value={form.budget} onChange={handleChange} min={100} max={500000} required />
+                  </div>
+                  <div className="form-group">
+                    <label className="label">ZIP Code</label>
+                    <input type="text" name="zip_code" className="input" placeholder="90210" value={form.zip_code} onChange={handleChange} maxLength={5} pattern="[0-9]{5}" />
+                  </div>
+                </div>
+              )}
+
+              {activePanel === 'wheels' && (
+                <>
+                  <label className="label">Wheel Style</label>
+                  <div className="builder-chip-grid">
+                    {WHEELS.map(wheel => (
+                      <button key={wheel.value} type="button" className={`builder-chip ${form.visual_config.wheel_style === wheel.value ? 'active' : ''}`} onClick={() => updateVisual({ wheel_style: wheel.value })}>
+                        {wheel.label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="builder-color-row">
+                    <div className="form-group">
+                      <label className="label">Wheel Color</label>
+                      <input className="color-input" type="color" value={form.visual_config.wheel_color} onChange={e => updateVisual({ wheel_color: e.target.value })} />
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {activePanel === 'suspension' && (
+                <>
+                  <label className="label">Ride Height</label>
+                  <div className="builder-chip-grid">
+                    {RIDE_HEIGHTS.map(height => (
+                      <button key={height.value} type="button" className={`builder-chip ${form.visual_config.ride_height === height.value ? 'active' : ''}`} onClick={() => updateVisual({ ride_height: height.value })}>
+                        {height.label}
+                      </button>
+                    ))}
+                  </div>
+                  <label className="label">Build Identity</label>
+                  <div className="builder-chip-grid">
+                    {BUILD_MODES.map(mode => (
+                      <button key={mode.value} type="button" className={`builder-chip ${form.visual_config.build_style === mode.value ? 'active' : ''}`} onClick={() => updateVisual({ build_style: mode.value })}>
+                        {mode.label}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {activePanel === 'aero' && (
+                <>
+                  <label className="label">Aero / Body Layers</label>
+                  <div className="builder-chip-grid">
+                    {AERO.map(layer => (
+                      <button key={layer.value} type="button" className={`builder-chip ${form.visual_config.aero_layers?.includes(layer.value) ? 'active' : ''}`} onClick={() => toggleAero(layer.value)}>
+                        {layer.label}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {activePanel === 'paint' && (
+                <div className="builder-panel-grid">
+                  <div className="form-group">
+                    <label className="label">Paint Color</label>
+                    <input className="color-input" type="color" value={form.visual_config.paint_color} onChange={e => updateVisual({ paint_color: e.target.value })} />
+                  </div>
+                  <div className="form-group">
+                    <label className="label">Finish</label>
+                    <div className="builder-chip-grid compact">
+                      {PAINT_FINISHES.map(finish => (
+                        <button key={finish} type="button" className={`builder-chip ${form.visual_config.paint_finish === finish ? 'active' : ''}`} onClick={() => updateVisual({ paint_finish: finish })}>
+                          {finish}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {['lighting', 'interior', 'exhaust', 'drivetrain'].includes(activePanel) && (
+                <>
+                  <label className="label">Build Goal</label>
+                  <div className="builder-chip-grid">
+                    {GOALS.map(goal => (
+                      <button key={goal} type="button" className={`builder-chip ${form.goals === goal ? 'active' : ''}`} onClick={() => setForm(f => ({ ...f, goals: goal }))}>
+                        {goal}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="form-group">
+                    <label className="label">Notes For AI Planner</label>
+                    <textarea
+                      name="notes"
+                      className="input textarea"
+                      placeholder={`Tell the AI what you want for ${activePanel}: tone, constraints, brands, already-owned parts, or daily-driver needs.`}
+                      value={form.notes}
+                      onChange={handleChange}
+                      rows={4}
+                      maxLength={500}
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+
+            <button type="submit" className="btn btn-primary btn-full btn-lg" disabled={remaining === 0}>
+              {remaining === 0 ? 'Daily Limit Reached' : 'Generate Build Plans'}
+            </button>
+          </div>
         </form>
       </div>
     </main>

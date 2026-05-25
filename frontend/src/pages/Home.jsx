@@ -1,90 +1,75 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import GlitchText from '../components/GlitchText';
 
-const FEATURES = [
-  { icon: '🤖', title: 'AI-POWERED BUILDS', desc: 'Claude AI analyzes your car and budget to generate three complete build plans tailored to your exact specs.' },
-  { icon: '💰', title: '3 BUDGET TIERS', desc: 'Budget, Mid-Range, and Full Send options — every mod sourced with real parts links and cost estimates.' },
-  { icon: '🏁', title: 'CREWS & COMPETITION', desc: 'Create or join a crew with friends. Track build progress on a live leaderboard and comment on each other\'s builds.' },
-  { icon: '🔧', title: 'GARAGE DOC AI', desc: 'Built-in AI diagnostic assistant. Ask about warning lights, OBD codes, weird noises — get plain-English fixes instantly.' },
-  { icon: '🔩', title: 'JUNKYARD FINDER', desc: 'ZIP-code based salvage yard discovery using live map data. Find used parts cheap near you.' },
-  { icon: '📋', title: 'PARTS LISTS', desc: 'Every modification includes install difficulty, time estimate, sourcing links for new, used, and junkyard parts.' },
-  { icon: '⚡', title: 'INSTANT RESULTS', desc: 'Get a full build plan in seconds. Save and revisit your builds from your personal dashboard.' },
-  { icon: '🔒', title: 'FREE TIER', desc: '2 free builds per day. No credit card required to get started.' },
-];
+const PLATFORM_TAGS = ['OEM+', 'Track', 'Street', 'Drift', 'Show'];
 
 export default function Home() {
   const { user } = useAuth();
 
   return (
-    <main className="page-home">
-      <section className="hero">
-        <div className="hero-content">
-          <div className="hero-badge">AI-POWERED CAR BUILD PLANNER</div>
-          <GlitchText text="GLITCH GARAGE" tag="h1" className="hero-title" />
-          <p className="hero-subtitle">
-            Input your car. Set your budget. Get three complete build plans — Budget, Mid-Range, and Full Send —
-            with parts lists, sourcing links, and real costs. Powered by Claude AI.
+    <main className="page-home garage-landing">
+      <section className="landing-hero">
+        <div className="landing-copy">
+          <span className="landing-kicker">MIDNIGHT BUILD PLANNING PLATFORM</span>
+          <h1>Glitch Garage</h1>
+          <p>
+            Build a digital identity card for your car, plan the next phase with AI,
+            and keep your garage, crew, chat, and Garage Doc in one polished workspace.
           </p>
-          <div className="hero-actions">
+          <div className="landing-actions">
             {user ? (
-              <Link to="/build" className="btn btn-primary btn-lg">
-                ⚡ GENERATE BUILD PLAN
-              </Link>
+              <>
+                <Link to="/dashboard" className="btn btn-primary btn-lg">Open My Garage</Link>
+                <Link to="/build" className="btn btn-outline btn-lg">New Build</Link>
+              </>
             ) : (
               <>
-                <Link to="/register" className="btn btn-primary btn-lg">
-                  GET STARTED FREE
-                </Link>
-                <Link to="/login" className="btn btn-outline btn-lg">
-                  LOGIN
-                </Link>
+                <Link to="/login" className="btn btn-outline btn-lg">Login</Link>
+                <Link to="/register" className="btn btn-primary btn-lg">Sign Up</Link>
               </>
             )}
           </div>
-          <div className="hero-stats">
-            <div className="hero-stat"><span>2</span> builds/day free</div>
-            <div className="hero-stat"><span>3</span> tier options</div>
-            <div className="hero-stat"><span>∞</span> possibilities</div>
+          <div className="landing-metrics">
+            <span>AI build plans</span>
+            <span>Digital build cards</span>
+            <span>Garage Doc ready</span>
           </div>
         </div>
-        <div className="hero-visual">
-          <div className="hero-car-icon">🚗</div>
-          <div className="hero-sparks">
-            {[...Array(6)].map((_, i) => <div key={i} className={`spark spark-${i}`} />)}
+
+        <div className="landing-stage" aria-label="Stylized enthusiast car render">
+          <div className="landing-light landing-light-a" />
+          <div className="landing-light landing-light-b" />
+          <div className="hero-car-render">
+            <div className="hero-car-glass" />
+            <div className="hero-car-body" />
+            <div className="hero-car-highlight" />
+            <div className="hero-car-lip" />
+            <div className="hero-wheel hero-wheel-front" />
+            <div className="hero-wheel hero-wheel-rear" />
+            <div className="hero-floor-reflection" />
+          </div>
+          <div className="platform-tags">
+            {PLATFORM_TAGS.map(tag => <span key={tag}>{tag}</span>)}
           </div>
         </div>
       </section>
 
-      <section className="features">
-        <div className="container">
-          <h2 className="section-heading">WHY GLITCH GARAGE?</h2>
-          <div className="features-grid">
-            {FEATURES.map((f, i) => (
-              <div key={i} className="feature-card">
-                <div className="feature-icon">{f.icon}</div>
-                <h3 className="feature-title">{f.title}</h3>
-                <p className="feature-desc">{f.desc}</p>
-              </div>
-            ))}
-          </div>
+      <section className="landing-feature-band">
+        <div>
+          <span>01</span>
+          <strong>Visualize</strong>
+          <p>Set paint, stance, wheels, aero, and build style before the parts list starts.</p>
         </div>
-      </section>
-
-      <section className="cta-section">
-        <div className="container">
-          <h2>READY TO BUILD?</h2>
-          <p>Tell Claude your car and budget. Get a full build plan in seconds.</p>
-          {user ? (
-            <Link to="/build" className="btn btn-primary btn-lg">
-              ⚡ START BUILDING
-            </Link>
-          ) : (
-            <Link to="/register" className="btn btn-primary btn-lg">
-              CREATE FREE ACCOUNT
-            </Link>
-          )}
+        <div>
+          <span>02</span>
+          <strong>Generate</strong>
+          <p>Get budget, mid-range, and full-send plans without losing your garage context.</p>
+        </div>
+        <div>
+          <span>03</span>
+          <strong>Share</strong>
+          <p>Keep saved builds, crew progress, global chat, and Garage Doc close by.</p>
         </div>
       </section>
     </main>
