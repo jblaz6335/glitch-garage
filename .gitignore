@@ -6,6 +6,9 @@ backend/node_modules/
 # Environment variables — NEVER commit secrets
 backend/.env
 .env
+.env.local
+*.env
+CLAUDE.local.md
 
 # Database
 backend/data/

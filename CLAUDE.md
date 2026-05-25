@@ -64,11 +64,11 @@ All auto-created on startup via `executeMultiple` in `db/database.js`:
 ## Deployment (IMPORTANT)
 GitHub auto-deploy webhook is broken — always deploy via Railway CLI from repo root:
 ```bash
-RAILWAY_API_TOKEN=640617de-fbc4-411a-8c25-347afa1c4229 railway link \
+RAILWAY_API_TOKEN=<set locally> railway link \
   --project 22e06b76-215d-46ed-a613-f7a7da5ad827 \
   --environment 5b51fff9-4a65-4da0-b1ab-cfccf8d7a83a \
   --service backend   # or frontend
-RAILWAY_API_TOKEN=640617de-fbc4-411a-8c25-347afa1c4229 railway up --service backend --detach
+RAILWAY_API_TOKEN=<set locally> railway up --service backend --detach
 ```
 Never run `railway up` from a subdirectory.
 
